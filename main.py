@@ -30,11 +30,12 @@ COMMAND_MAP = {
     "rm": "del" if is_windows else "rm",
     "rmdir": "rmdir /s /q" if is_windows else "rm -r",
     "getpid": "echo %PROCESS_ID%" if is_windows else "echo $$",
-    "get_pids": "tasklist" if is_windows else "ps -e -o pid,cmd"
+    "get_pids": "tasklist" if is_windows else "ps -e -o pid,cmd",
+    "sysinfo": "uname -a" if not is_windows else "systeminfo"
 }
 
 ADMIN_COMMANDS = list(COMMAND_MAP.keys()) + ["log"]
-USER_COMMANDS = ["pwd", "whoami", "ls", "mkdir", "touch", "cd", "cat", "getpid", "rmdir", "get_pids"]
+USER_COMMANDS = ["pwd", "whoami", "ls", "mkdir", "touch", "cd", "cat", "getpid", "rmdir", "get_pids", "sysinfo"]
 
 themes = ["darkly", "cyborg", "superhero", "flatly", "morph"]
 
@@ -43,7 +44,6 @@ class SecureSystemGUI:
         self.root = root
         self.root.title("🔒 Secure System Dashboard")
         self.root.geometry("1200x800")
-        # self.root.resizable(False, False)
         self.root.resizable(True, True)
         self.root.state("zoomed")
         self.theme_idx = 0
@@ -233,6 +233,14 @@ class SecureSystemGUI:
                     self.output_box.insert(END, f"📘 System Call Log:\n{log_content}\n")
                 except FileNotFoundError:
                     self.output_box.insert(END, "❌ Log file not found.\n")
+                return
+
+            if cmd_name == "sysinfo":
+                result = subprocess.run(COMMAND_MAP["sysinfo"], shell=True, capture_output=True, text=True)
+                if result.stdout:
+                    self.output_box.insert(END, result.stdout + "\n")
+                if result.stderr:
+                    self.output_box.insert(END, "❌ Error:\n" + result.stderr + "\n")
                 return
 
             full_cmd = COMMAND_MAP.get(cmd_name, cmd_name) + " " + " ".join(command[1:])
